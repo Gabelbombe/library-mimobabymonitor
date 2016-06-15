@@ -4,7 +4,8 @@
 # Assumes brew is installed
 
 ## Declare versions comparing
-vercmp() {
+vercmp()
+{
   local a="$1" b="$2"
   local -i fa fb
 
@@ -28,6 +29,16 @@ vercmp() {
 }
 
 
+## Define search
+search ()
+{
+    local tgt=$1;
+    shift;
+    (( "$#" )) || set -- *;
+    grep -n -Iir "$tgt" "$@"
+}
+
+
 ## Test and install Python if not available
 if ! $(which python |grep 'python is' |head -n1) ; then
   brew install python ## python ~2.7, python3 is the ~3.x package
@@ -44,3 +55,15 @@ fi
 if ! $(which pip |grep 'pip is' |head -n1) ; then
   echo "Something broke with PIP install, exiting..." ; return 1
 fi
+
+## Install bluepy
+cd /opt && sudo git clone https://github.com/IanHarvey/bluepy.git
+cd bluepy
+
+
+## This happens because Apple decided to restructure its system headers,
+## moving endian.h to machine/endian.h and changing names of symbols within
+## that file. Stupid Apple :/
+for file in $(search endian.h |awk -F ':' '{print$1}') ; do
+  sed -i -e 's/endian\.h/machine\/endian\.h/g' $file
+done
